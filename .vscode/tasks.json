@@ -1,0 +1,63 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "flutter: run web server",
+            "type": "shell",
+            "command": "flutter",
+            "args": [
+                "run",
+                "-d",
+                "chrome",
+                "--web-port=8080",
+                "--web-hostname=localhost"
+            ],
+            "problemMatcher": {
+                "owner": "dart",
+                "pattern": {
+                    "regexp": "^",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": ".*Flutter run key commands.*|.*The Flutter DevTools.*|.*is running at.*"
+                }
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            }
+        },
+        {
+            "label": "flutter: run web server with .env",
+            "type": "shell",
+            "command": "${workspaceFolder}/scripts/run_web_with_env.sh",
+            "problemMatcher": {
+                "owner": "dart",
+                "pattern": {
+                    "regexp": "^",
+                    "file": 1,
+                    "location": 2,
+                    "message": 3
+                },
+                "background": {
+                    "activeOnStart": true,
+                    "beginsPattern": ".*",
+                    "endsPattern": ".*Flutter run key commands.*|.*The Flutter DevTools.*|.*is running at.*"
+                }
+            },
+            "isBackground": true,
+            "presentation": {
+                "reveal": "always",
+                "panel": "dedicated",
+                "focus": false
+            }
+        }
+    ]
+}
+
