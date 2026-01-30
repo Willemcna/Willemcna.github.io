@@ -104,17 +104,9 @@ The built `build/` directory is ignored by git, so production builds are created
 
 **Note**: For local development, the `.env` file method works, but using `--dart-define` (via the provided script) ensures consistency with production and avoids potential issues with `.env` file loading in web builds.
 
-### Deploy to production
+### Deploy to production (live site)
 
-**Option A: Auto-deploy to GitHub Pages (recommended)**  
-Push to `main` to build and deploy to GitHub Pages; you can link your GoDaddy custom domain via DNS. See **[DEPLOY_GODADDY.md](DEPLOY_GODADDY.md)** (Option 3) for setup: GitHub Secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`), enabling Pages from Actions, and custom domain.
-
-**Option B: Manual upload to GoDaddy**  
-1. Put your production Supabase URL and anon key in `.env`.
-2. Build and create the upload zip: `./publish.sh`
-3. Upload to GoDaddy: use the contents of `build/web/` or the zip `build/aplle-web-deploy.zip`. See **[DEPLOY_GODADDY.md](DEPLOY_GODADDY.md)** for step-by-step instructions.
-
-To update the live site: with GitHub Pages, push to `main`; with manual GoDaddy, run `./publish.sh` again and re-upload.
+Push to `main` to build and deploy to GitHub Pages. See **[DEPLOY_GODADDY.md](DEPLOY_GODADDY.md)** for setup: enable Pages (Source: GitHub Actions), add GitHub Secrets (`SUPABASE_URL`, `SUPABASE_ANON_KEY`), then push. You can link a custom domain (e.g. GoDaddy) via DNS.
 
 ## Database Schema
 
