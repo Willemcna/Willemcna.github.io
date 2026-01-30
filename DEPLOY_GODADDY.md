@@ -36,3 +36,7 @@ The **Build and Deploy to GitHub Pages** workflow runs on every push to `main`. 
 3. Wait for DNS to propagate. In **Settings** → **Pages**, enable **Enforce HTTPS** when it becomes available.
 
 To update the live site: push to `main`; the workflow deploys automatically.
+
+---
+
+**If you see a 404:** See **[PAGES_TROUBLESHOOTING.md](PAGES_TROUBLESHOOTING.md)** for step-by-step checks (workflow success, Pages source, custom domain, DNS).
