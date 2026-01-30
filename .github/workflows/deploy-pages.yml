@@ -31,6 +31,12 @@ jobs:
           channel: stable
           cache: true
 
+      - name: Verify Dart and pubspec SDK
+        run: |
+          flutter --version
+          echo "--- pubspec environment (must be >=3.3.0 for Dart 3.3.4) ---"
+          grep -A1 "^environment:" pubspec.yaml
+
       - name: Install dependencies
         run: flutter pub get
 
