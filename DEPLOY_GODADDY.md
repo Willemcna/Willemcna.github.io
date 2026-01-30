@@ -87,7 +87,52 @@ Your built app is ready. Use one of these methods to make the site live on GoDad
 
 ---
 
+## Option 3: Auto-deploy to GitHub Pages + custom domain (recommended)
+
+GitHub hosts the site; your GoDaddy domain points to it. Every push to `main` builds and deploys automatically.
+
+### 1. Enable GitHub Pages (Actions)
+
+1. On GitHub: open your repo → **Settings** → **Pages**.
+2. Under **Build and deployment**, set **Source** to **GitHub Actions**.
+
+### 2. Add GitHub Secrets
+
+Repo → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**. Add:
+
+| Secret name         | Value (same as in your `.env`) |
+|---------------------|---------------------------------|
+| `SUPABASE_URL`     | Your central Supabase project URL |
+| `SUPABASE_ANON_KEY` | Your central Supabase anon key   |
+
+### 3. Push to deploy
+
+After the workflow (`.github/workflows/deploy-pages.yml`) and secrets are in place:
+
+```bash
+./publish.sh   # optional: build locally and create zip
+git add .
+git commit -m "Your message"
+git push origin main
+```
+
+The **Build and Deploy to GitHub Pages** workflow runs on every push to `main`. When it succeeds, the site is live at:
+
+- `https://<your-username>.github.io/<repo-name>/`
+
+### 4. Link your GoDaddy custom domain
+
+1. **GitHub:** Repo → **Settings** → **Pages** → under **Custom domain**, enter your domain (e.g. `yourdomain.com` or `www.yourdomain.com`) → **Save**. GitHub will show the DNS records to add.
+2. **GoDaddy:** **My Products** → your domain → **DNS** (or **Manage DNS**). Add the records GitHub shows, for example:
+   - **A records** for `@` (apex): point to GitHub’s IPs (e.g. `185.199.108.153`, `185.199.109.153`, `185.199.110.153`, `185.199.111.153` — use the values GitHub displays).
+   - **CNAME** for `www`: point to `<your-username>.github.io` (or the value GitHub shows).
+3. Wait for DNS to propagate (minutes to 48 hours). Back in **Settings** → **Pages**, enable **Enforce HTTPS** when it becomes available.
+
+Your site will then be available at your custom domain with no manual uploads. To update: push to `main` and the workflow deploys the latest build.
+
+---
+
 ## After deployment
 
-- The app uses the **central Supabase** URL and key that were in `.env` when you ran `./publish.sh`.
-- To update the live site after code changes: run `./publish.sh` again, then re-upload the new contents of `build/web/` (or a new zip) to GoDaddy.
+- **Manual upload (Options 1–2):** The app uses the **central Supabase** URL and key that were in `.env` when you ran `./publish.sh`. To update: run `./publish.sh` again, then re-upload the new contents of `build/web/` (or a new zip) to GoDaddy.
+- **GitHub Pages (Option 3):** The app uses the Supabase URL and key from **GitHub Secrets**. To update: push to `main`; the workflow builds and deploys automatically.

@@ -35,6 +35,11 @@ flutter build web \
   --dart-define="SUPABASE_URL=$SUPABASE_URL" \
   --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
 
+# Create zip for easy upload to GoDaddy (root = contents of build/web)
+( cd "$ROOT_DIR/build/web" && zip -r -q "$ROOT_DIR/build/aplle-web-deploy.zip" . -x "*.DS_Store" )
 echo ""
 echo "✅ Build complete! Output is in: build/web/"
-echo "You can deploy the contents of build/web/ to your hosting provider."
+echo "Zip for upload: build/aplle-web-deploy.zip"
+echo "Deploy: upload the zip (or build/web/ contents) to your hosting — see DEPLOY_GODADDY.md"
+echo ""
+echo "To go live via GitHub Pages: git push origin main"
