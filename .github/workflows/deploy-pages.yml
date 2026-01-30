@@ -40,9 +40,15 @@ jobs:
       # Ensure SDK constraint allows Dart 3.3.4 (Flutter 3.19.6) so pub get succeeds
       - name: Set pubspec SDK for CI
         run: |
-          sed -i.bak 's/^  sdk:.*/  sdk: ">=3.3.0 <4.0.0"/' pubspec.yaml
+          # Match any indentation and any sdk value (^3.9.2, ">=3.9.0", etc.)
+          sed -i.bak 's/^[[:space:]]*sdk:[[:space:]]*.*/  sdk: ">=3.3.0 <4.0.0"/' pubspec.yaml
+          # Also fix pubspec.lock sdks section so it accepts Dart 3.3.4
+          sed -i.bak 's/dart: ">=3\.9\.0/dart: ">=3.3.0/' pubspec.lock 2>/dev/null || true
+          sed -i.bak 's/flutter: ">=3\.35\./flutter: ">=3.19./' pubspec.lock 2>/dev/null || true
           echo "--- pubspec after CI fix ---"
           grep -A1 "^environment:" pubspec.yaml
+          echo "--- pubspec.lock sdks ---"
+          grep -A2 "^sdks:" pubspec.lock 2>/dev/null || true
 
       - name: Install dependencies
         run: flutter pub get
