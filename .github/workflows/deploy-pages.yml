@@ -37,6 +37,13 @@ jobs:
           echo "--- pubspec environment (must be >=3.3.0 for Dart 3.3.4) ---"
           grep -A1 "^environment:" pubspec.yaml
 
+      # Ensure SDK constraint allows Dart 3.3.4 (Flutter 3.19.6) so pub get succeeds
+      - name: Set pubspec SDK for CI
+        run: |
+          sed -i.bak 's/^  sdk:.*/  sdk: ">=3.3.0 <4.0.0"/' pubspec.yaml
+          echo "--- pubspec after CI fix ---"
+          grep -A1 "^environment:" pubspec.yaml
+
       - name: Install dependencies
         run: flutter pub get
 
