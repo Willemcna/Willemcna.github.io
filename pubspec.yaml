@@ -52,6 +52,12 @@ dependencies:
   
   # Environment variables
   flutter_dotenv: ^5.1.0
+  
+  # HTTP client for webhooks
+  http: ^1.2.0
+  
+  # Speech to text for transcribe functionality
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:

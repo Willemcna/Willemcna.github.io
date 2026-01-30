@@ -39,16 +39,18 @@ class Sidebar extends StatelessWidget {
                 Text(
                   'Dashboard',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onPrimary,
-                      ),
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
                 ),
                 if (organizationName != null) ...[
                   const SizedBox(height: 4),
                   Text(
                     organizationName!,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onPrimary.withValues(alpha: 0.8),
-                        ),
+                      color: Theme.of(
+                        context,
+                      ).colorScheme.onPrimary.withValues(alpha: 0.8),
+                    ),
                   ),
                 ],
               ],
@@ -58,8 +60,11 @@ class Sidebar extends StatelessWidget {
             leading: const Icon(Icons.dashboard),
             title: const Text('Dashboard'),
             selected: selectedIndex == 0,
-            onTap: () {
-              Navigator.of(context).pushReplacement(
+            onTap: () async {
+              final nav = Navigator.of(context);
+              nav.pop();
+              await Future.delayed(const Duration(milliseconds: 150));
+              nav.pushReplacement(
                 MaterialPageRoute(builder: (_) => const DashboardPage()),
               );
               onItemSelected(0);
@@ -69,8 +74,11 @@ class Sidebar extends StatelessWidget {
             leading: const Icon(Icons.chat),
             title: const Text('Chats'),
             selected: selectedIndex == 1,
-            onTap: () {
-              Navigator.of(context).pushReplacement(
+            onTap: () async {
+              final nav = Navigator.of(context);
+              nav.pop();
+              await Future.delayed(const Duration(milliseconds: 150));
+              nav.pushReplacement(
                 MaterialPageRoute(builder: (_) => const ChatsPage()),
               );
               onItemSelected(1);
@@ -80,8 +88,11 @@ class Sidebar extends StatelessWidget {
             leading: const Icon(Icons.settings),
             title: const Text('Settings'),
             selected: selectedIndex == 2,
-            onTap: () {
-              Navigator.of(context).pushReplacement(
+            onTap: () async {
+              final nav = Navigator.of(context);
+              nav.pop();
+              await Future.delayed(const Duration(milliseconds: 150));
+              nav.pushReplacement(
                 MaterialPageRoute(builder: (_) => const SettingsPage()),
               );
               onItemSelected(2);
@@ -100,10 +111,9 @@ class Sidebar extends StatelessWidget {
             onTap: () async {
               await AuthService().signOut();
               if (context.mounted) {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  '/',
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil('/', (route) => false);
               }
             },
           ),
@@ -112,4 +122,3 @@ class Sidebar extends StatelessWidget {
     );
   }
 }
-

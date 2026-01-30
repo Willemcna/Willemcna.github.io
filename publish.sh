@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-# Simple helper script to run the Flutter web app with Supabase credentials
+# Build script for Flutter web app production deployment
+# This script builds the Flutter web app with Supabase credentials
 # provided via --dart-define. This script expects a .env file in the project
-# root containing SUPABASE_URL and SUPABASE_ANON_KEY. The .env file itself
-# is NOT committed to git.
+# root containing SUPABASE_URL and SUPABASE_ANON_KEY.
 
 set -euo pipefail
 
-ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ ! -f "$ROOT_DIR/.env" ]; then
   echo "ERROR: .env file not found in project root ($ROOT_DIR/.env)."
@@ -27,10 +27,14 @@ fi
 
 cd "$ROOT_DIR"
 
-flutter run -d chrome \
-  --web-hostname=localhost \
-  --web-port=8080 \
+echo "Building Flutter web app for production..."
+echo "Using SUPABASE_URL: ${SUPABASE_URL}"
+
+flutter build web \
+  --release \
   --dart-define="SUPABASE_URL=$SUPABASE_URL" \
   --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY"
 
-
+echo ""
+echo "✅ Build complete! Output is in: build/web/"
+echo "You can deploy the contents of build/web/ to your hosting provider."

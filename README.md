@@ -24,36 +24,76 @@ A Flutter web application for monitoring and analyzing WhatsApp AI agent convers
 
 ### Installation (local development)
 
-1. Clone the repository:
+1. **Clone the repository:**
 ```bash
 git clone <repository-url>
 cd aplle
 ```
 
-2. Install dependencies:
+2. **Install dependencies:**
 ```bash
 flutter pub get
 ```
 
-3. Create a `.env` file in the root directory (this file is **not** committed to git):
-```env
-SUPABASE_URL=https://your-central-project.supabase.co
-SUPABASE_ANON_KEY=your-anon-key-here
-```
+3. **Set up environment variables:**
+   
+   Copy the example environment file and fill in your credentials:
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` and add your central Supabase credentials:
+   ```env
+   SUPABASE_URL=https://your-central-project.supabase.co
+   SUPABASE_ANON_KEY=your-anon-key-here
+   ```
+   
+   > **Important**: The `.env` file is **not** committed to git. Never commit your actual credentials.
 
-4. Run the application for local development:
-```bash
-flutter run -d chrome
-```
+4. **Set up the database:**
+   
+   Before running the app, ensure your central Supabase database is set up:
+   - Run the migration script `supabase_migrations.sql` in your Supabase SQL Editor
+   - See `DATABASE_SETUP.md` for detailed instructions
+   - This creates the required tables: `organizations`, `profiles`, `organization_members`, `tenant_connections`
+
+5. **Run the application:**
+   
+   **Option A: Using the provided script (Recommended)**
+   ```bash
+   ./scripts/run_web_with_env.sh
+   ```
+   This script automatically loads credentials from your `.env` file and passes them via `--dart-define` flags.
+   
+   **Option B: Manual command**
+   ```bash
+   flutter run -d chrome \
+     --dart-define=SUPABASE_URL=your-url \
+     --dart-define=SUPABASE_ANON_KEY=your-key
+   ```
+   
+   **Option C: VS Code Debugger**
+   - Use the "Flutter Web (Debug)" configuration in VS Code
+   - It automatically uses credentials from your `.env` file via the pre-configured task
+   
+   The app will be available at `http://localhost:8080`
+
+6. **Connect a tenant Supabase (after first login):**
+   - Sign up or log in to create your account
+   - Go to Settings page
+   - Add your tenant Supabase URL and Anon Key
+   - The tenant Supabase should have the `n8n_chat_histories` table with chat data
 
 ### Configuration in production
 
 For production deployments, you should **not** commit any real Supabase credentials to the repo or to built artifacts:
 
 - `SUPABASE_URL` and `SUPABASE_ANON_KEY` are read at runtime by `lib/core/config/supabase_config.dart`.
-- In local development they come from your `.env` file (via `flutter_dotenv`).
-- In production you should inject them using Flutter’s `--dart-define` flags (for example in your CI/CD pipeline or hosting provider):
+- The app supports two methods (in priority order):
+  1. `--dart-define` flags (recommended for production)
+  2. `.env` file via `flutter_dotenv` (works for local development)
 
+**Production build:**
 ```bash
 flutter build web \
   --dart-define=SUPABASE_URL=https://your-central-project.supabase.co \
@@ -61,6 +101,8 @@ flutter build web \
 ```
 
 The built `build/` directory is ignored by git, so production builds are created per deployment environment and not tracked in this repository.
+
+**Note**: For local development, the `.env` file method works, but using `--dart-define` (via the provided script) ensures consistency with production and avoids potential issues with `.env` file loading in web builds.
 
 ## Database Schema
 
@@ -91,7 +133,7 @@ Each organization's Supabase instance should have:
 1. **Sign Up**: Create an account (automatically creates an organization)
 2. **Connect Supabase**: Go to Settings and add your Supabase URL and Anon Key
 3. **View Dashboard**: See KPIs and analytics on the Dashboard page
-4. **View Chats**: Browse conversations in WhatsApp-style interface on the Chats page
+4. **View Chats**: Browse conversations in WhatsApp-style interface on the Chats page. Each session has a **star toggle** next to the session ID to star/unstar conversations.
 5. **Switch Organizations**: Use the organization switcher if you belong to multiple organizations
 
 ## Project Structure
@@ -136,6 +178,34 @@ Messages in `n8n_chat_histories.message` should follow this JSON structure:
 - **Order Links**: Detected via URL regex in AI messages
 - **Handovers**: Detected via phone number regex in AI messages
 - **Top Products**: Matched against Products table by name
+
+## Troubleshooting
+
+### App won't start / Supabase initialization errors
+
+- **Check your `.env` file**: Ensure it exists in the project root with `SUPABASE_URL` and `SUPABASE_ANON_KEY`
+- **Use the script**: Run `./scripts/run_web_with_env.sh` instead of `flutter run` directly
+- **Verify credentials**: Make sure your Supabase URL and Anon Key are correct
+- **Check database setup**: Ensure `supabase_migrations.sql` has been run on your central Supabase
+
+### Authentication not working
+
+- Verify your central Supabase has the required tables (see Database Schema section)
+- Check that Row Level Security (RLS) policies are set up correctly
+- Ensure the `profiles` table trigger is created (auto-creates profiles on signup)
+
+### Tenant connection not working
+
+- Verify the tenant Supabase URL and Anon Key are correct
+- Check that the tenant Supabase has the `n8n_chat_histories` table
+- Ensure RLS policies on the tenant Supabase allow reads with the provided Anon Key
+- Check browser console for CORS errors (Supabase should handle this, but verify)
+
+### Real-time updates not working
+
+- Ensure Supabase Realtime is enabled for the `n8n_chat_histories` table
+- In Supabase dashboard: Database → Replication → Enable for `n8n_chat_histories`
+- Check browser console for WebSocket connection errors
 
 ## Release Checklist
 

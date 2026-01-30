@@ -2,11 +2,7 @@ import 'package:flutter/material.dart';
 
 /// Simple chat-style speech bubble used on the homepage hero.
 class ChatBubble extends StatelessWidget {
-  const ChatBubble({
-    super.key,
-    required this.text,
-    this.isUser = false,
-  });
+  const ChatBubble({super.key, required this.text, this.isUser = false});
 
   /// Bubble text content.
   final String text;
@@ -19,13 +15,14 @@ class ChatBubble extends StatelessWidget {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final backgroundColor =
-        isUser ? colorScheme.primary : colorScheme.surfaceVariant;
-    final textColor =
-        isUser ? colorScheme.onPrimary : colorScheme.onSurfaceVariant;
+    final backgroundColor = isUser
+        ? colorScheme.primary
+        : colorScheme.surfaceContainerHighest;
+    final textColor = isUser
+        ? colorScheme.onPrimary
+        : colorScheme.onSurfaceVariant;
 
-    final alignment =
-        isUser ? Alignment.centerRight : Alignment.centerLeft;
+    final alignment = isUser ? Alignment.centerRight : Alignment.centerLeft;
 
     final borderRadius = BorderRadius.only(
       topLeft: const Radius.circular(18),
@@ -37,9 +34,7 @@ class ChatBubble extends StatelessWidget {
     return Align(
       alignment: alignment,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          maxWidth: 600,
-        ),
+        constraints: const BoxConstraints(maxWidth: 600),
         child: Container(
           margin: const EdgeInsets.symmetric(vertical: 6),
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -56,7 +51,7 @@ class ChatBubble extends StatelessWidget {
           ),
           child: Text(
             text,
-            style: theme.textTheme.bodyMedium?.copyWith(
+            style: (theme.textTheme.bodyMedium ?? const TextStyle()).copyWith(
               color: textColor,
               height: 1.4,
             ),
@@ -66,5 +61,3 @@ class ChatBubble extends StatelessWidget {
     );
   }
 }
-
-

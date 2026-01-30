@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../../core/services/organization_service.dart';
 import '../../../core/services/tenant_service.dart';
+import '../../../core/services/webhook_service.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/supabase_connection_form.dart';
 import '../widgets/organization_switcher.dart';
@@ -17,11 +18,17 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   final _displayNameController = TextEditingController();
+  final _webhookUrlController = TextEditingController();
+  final _messageWebhookUrlController = TextEditingController();
   bool _isSavingConnection = false;
+  bool _isSavingWebhook = false;
+  bool _isSavingMessageWebhook = false;
 
   @override
   void dispose() {
     _displayNameController.dispose();
+    _webhookUrlController.dispose();
+    _messageWebhookUrlController.dispose();
     super.dispose();
   }
 
@@ -31,17 +38,15 @@ class _SettingsPageState extends State<SettingsPage> {
       create: (_) {
         final orgService = OrganizationService();
         final tenantService = TenantService();
-        return DashboardProvider(orgService, tenantService)..loadOrganizations();
+        return DashboardProvider(orgService, tenantService)
+          ..loadOrganizations();
       },
       child: Consumer<DashboardProvider>(
         builder: (context, provider, _) {
           if (provider.isLoading) {
             return Scaffold(
               appBar: AppBar(title: const Text('Settings')),
-              drawer: Sidebar(
-                selectedIndex: 2,
-                onItemSelected: (_) {},
-              ),
+              drawer: Sidebar(selectedIndex: 2, onItemSelected: (_) {}),
               body: const LoadingIndicator(),
             );
           }
@@ -75,7 +80,8 @@ class _SettingsPageState extends State<SettingsPage> {
                               const SizedBox(height: 16),
                               OrganizationSwitcher(
                                 organizations: provider.organizations,
-                                selectedOrganization: provider.selectedOrganization,
+                                selectedOrganization:
+                                    provider.selectedOrganization,
                                 onOrganizationSelected: (org) {
                                   provider.selectOrganization(org);
                                 },
@@ -105,8 +111,9 @@ class _SettingsPageState extends State<SettingsPage> {
                             const SizedBox(height: 16),
                             FutureBuilder(
                               future: provider.selectedOrganization != null
-                                  ? TenantService()
-                                      .getTenantConnection(provider.selectedOrganization!.id)
+                                  ? TenantService().getTenantConnection(
+                                      provider.selectedOrganization!.id,
+                                    )
                                   : Future.value(null),
                               builder: (context, snapshot) {
                                 String? initialUrl;
@@ -114,7 +121,8 @@ class _SettingsPageState extends State<SettingsPage> {
 
                                 if (snapshot.hasData && snapshot.data != null) {
                                   initialUrl = snapshot.data!.supabaseUrl;
-                                  initialAnonKey = snapshot.data!.supabaseAnonKey;
+                                  initialAnonKey =
+                                      snapshot.data!.supabaseAnonKey;
                                 }
 
                                 return SupabaseConnectionForm(
@@ -123,46 +131,347 @@ class _SettingsPageState extends State<SettingsPage> {
                                   isLoading: _isSavingConnection,
                                   onSubmit: (url, anonKey) async {
                                     if (provider.selectedOrganization == null) {
-                                      ScaffoldMessenger.of(context).showSnackBar(
+                                      ScaffoldMessenger.of(
+                                        context,
+                                      ).showSnackBar(
                                         const SnackBar(
-                                          content: Text('Please select an organization'),
+                                          content: Text(
+                                            'Please select an organization',
+                                          ),
                                         ),
                                       );
                                       return;
                                     }
 
                                     setState(() => _isSavingConnection = true);
-                                    final messenger = ScaffoldMessenger.of(context);
+                                    final messenger = ScaffoldMessenger.of(
+                                      context,
+                                    );
 
                                     try {
                                       final tenantService = TenantService();
                                       await tenantService.saveTenantConnection(
-                                        orgId: provider.selectedOrganization!.id,
+                                        orgId:
+                                            provider.selectedOrganization!.id,
                                         supabaseUrl: url,
                                         supabaseAnonKey: anonKey,
                                       );
 
-                                      await provider.initializeTenantConnection();
+                                      await provider
+                                          .initializeTenantConnection();
 
                                       if (!mounted) return;
                                       messenger.showSnackBar(
                                         const SnackBar(
-                                          content: Text('Connection saved successfully'),
+                                          content: Text(
+                                            'Connection saved successfully',
+                                          ),
                                         ),
                                       );
                                     } catch (e) {
                                       if (!mounted) return;
                                       messenger.showSnackBar(
                                         SnackBar(
-                                          content: Text('Error: ${e.toString()}'),
+                                          content: Text(
+                                            'Error: ${e.toString()}',
+                                          ),
                                         ),
                                       );
                                     } finally {
                                       if (mounted) {
-                                        setState(() => _isSavingConnection = false);
+                                        setState(
+                                          () => _isSavingConnection = false,
+                                        );
                                       }
                                     }
                                   },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Webhook Configuration
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Webhook Configuration',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Configure a webhook URL to receive notifications when chats are toggled on/off',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 16),
+                            FutureBuilder(
+                              future: provider.selectedOrganization != null
+                                  ? WebhookService().getWebhookUrl(
+                                      provider.selectedOrganization!.id,
+                                    )
+                                  : Future.value(null),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  _webhookUrlController.text = snapshot.data!;
+                                }
+
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    TextField(
+                                      controller: _webhookUrlController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Webhook URL',
+                                        hintText: 'https://example.com/webhook',
+                                        border: OutlineInputBorder(),
+                                        helperText:
+                                            'Enter the URL where webhook notifications will be sent',
+                                      ),
+                                      keyboardType: TextInputType.url,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: _isSavingWebhook
+                                          ? null
+                                          : () async {
+                                              if (provider
+                                                      .selectedOrganization ==
+                                                  null) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Please select an organization',
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              final webhookUrl =
+                                                  _webhookUrlController.text
+                                                      .trim();
+                                              if (webhookUrl.isEmpty) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Please enter a webhook URL',
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              setState(
+                                                () => _isSavingWebhook = true,
+                                              );
+                                              final messenger =
+                                                  ScaffoldMessenger.of(context);
+
+                                              try {
+                                                final webhookService =
+                                                    WebhookService();
+                                                await webhookService
+                                                    .saveWebhookUrl(
+                                                      orgId: provider
+                                                          .selectedOrganization!
+                                                          .id,
+                                                      webhookUrl: webhookUrl,
+                                                    );
+
+                                                if (!mounted) return;
+                                                messenger.showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Webhook saved successfully',
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                if (!mounted) return;
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Error: ${e.toString()}',
+                                                    ),
+                                                  ),
+                                                );
+                                              } finally {
+                                                if (mounted) {
+                                                  setState(
+                                                    () => _isSavingWebhook =
+                                                        false,
+                                                  );
+                                                }
+                                              }
+                                            },
+                                      child: _isSavingWebhook
+                                          ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Text('Save Webhook'),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Message Webhook Configuration
+                    Card(
+                      child: Padding(
+                        padding: const EdgeInsets.all(16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Message Webhook Configuration',
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              'Configure a webhook URL to receive notifications when messages are sent from the message bar',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(height: 16),
+                            FutureBuilder(
+                              future: provider.selectedOrganization != null
+                                  ? WebhookService().getMessageWebhookUrl(
+                                      provider.selectedOrganization!.id,
+                                    )
+                                  : Future.value(null),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  _messageWebhookUrlController.text =
+                                      snapshot.data!;
+                                }
+
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    TextField(
+                                      controller: _messageWebhookUrlController,
+                                      decoration: const InputDecoration(
+                                        labelText: 'Message Webhook URL',
+                                        hintText:
+                                            'https://example.com/message-webhook',
+                                        border: OutlineInputBorder(),
+                                        helperText:
+                                            'Enter the URL where message webhook notifications will be sent',
+                                      ),
+                                      keyboardType: TextInputType.url,
+                                    ),
+                                    const SizedBox(height: 16),
+                                    ElevatedButton(
+                                      onPressed: _isSavingMessageWebhook
+                                          ? null
+                                          : () async {
+                                              if (provider
+                                                      .selectedOrganization ==
+                                                  null) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Please select an organization',
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              final webhookUrl =
+                                                  _messageWebhookUrlController
+                                                      .text
+                                                      .trim();
+                                              if (webhookUrl.isEmpty) {
+                                                ScaffoldMessenger.of(
+                                                  context,
+                                                ).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Please enter a webhook URL',
+                                                    ),
+                                                  ),
+                                                );
+                                                return;
+                                              }
+
+                                              setState(
+                                                () => _isSavingMessageWebhook =
+                                                    true,
+                                              );
+                                              final messenger =
+                                                  ScaffoldMessenger.of(context);
+
+                                              try {
+                                                final webhookService =
+                                                    WebhookService();
+                                                await webhookService
+                                                    .saveMessageWebhookUrl(
+                                                      orgId: provider
+                                                          .selectedOrganization!
+                                                          .id,
+                                                      webhookUrl: webhookUrl,
+                                                    );
+
+                                                if (!mounted) return;
+                                                messenger.showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text(
+                                                      'Message webhook saved successfully',
+                                                    ),
+                                                  ),
+                                                );
+                                              } catch (e) {
+                                                if (!mounted) return;
+                                                messenger.showSnackBar(
+                                                  SnackBar(
+                                                    content: Text(
+                                                      'Error: ${e.toString()}',
+                                                    ),
+                                                  ),
+                                                );
+                                              } finally {
+                                                if (mounted) {
+                                                  setState(
+                                                    () =>
+                                                        _isSavingMessageWebhook =
+                                                            false,
+                                                  );
+                                                }
+                                              }
+                                            },
+                                      child: _isSavingMessageWebhook
+                                          ? const SizedBox(
+                                              height: 20,
+                                              width: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            )
+                                          : const Text('Save Message Webhook'),
+                                    ),
+                                  ],
                                 );
                               },
                             ),
@@ -180,4 +489,3 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
-

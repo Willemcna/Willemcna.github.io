@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/models/chat_message.dart';
 import 'message_bubble.dart';
+import 'message_input_bar.dart';
 import '../../../core/utils/date_formatter.dart';
 
 class ChatView extends StatefulWidget {
@@ -9,6 +10,9 @@ class ChatView extends StatefulWidget {
   final bool hasMoreMessages;
   final Function()? onLoadMore;
   final String? searchQuery;
+  final String? sessionId;
+  final bool isToggledOn;
+  final String? orgId;
 
   const ChatView({
     super.key,
@@ -17,6 +21,9 @@ class ChatView extends StatefulWidget {
     this.hasMoreMessages = false,
     this.onLoadMore,
     this.searchQuery,
+    this.sessionId,
+    this.isToggledOn = false,
+    this.orgId,
   });
 
   @override
@@ -85,9 +92,7 @@ class _ChatViewState extends State<ChatView> {
     final filteredMessages = _filteredMessages;
 
     if (filteredMessages.isEmpty && !widget.isLoading) {
-      return const Center(
-        child: Text('No messages found'),
-      );
+      return const Center(child: Text('No messages found'));
     }
 
     return Column(
@@ -110,9 +115,10 @@ class _ChatViewState extends State<ChatView> {
 
               final messageIndex = widget.isLoading ? index - 1 : index;
               final message = filteredMessages[messageIndex];
-              
+
               // Check if we should show a day separator
-              final shouldShowDaySeparator = messageIndex == 0 ||
+              final shouldShowDaySeparator =
+                  messageIndex == 0 ||
                   (messageIndex > 0 &&
                       !DateFormatter.isSameDay(
                         message.time,
@@ -125,9 +131,14 @@ class _ChatViewState extends State<ChatView> {
                   if (shouldShowDaySeparator) ...[
                     Center(
                       child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Text(
@@ -142,10 +153,7 @@ class _ChatViewState extends State<ChatView> {
                     alignment: message.message.isHuman
                         ? Alignment.centerLeft
                         : Alignment.centerRight,
-                    child: MessageBubble(
-                      message: message,
-                      showTimestamp: true,
-                    ),
+                    child: MessageBubble(message: message, showTimestamp: true),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -153,8 +161,18 @@ class _ChatViewState extends State<ChatView> {
             },
           ),
         ),
+        // Message input bar (only shown when session is toggled on)
+        if (widget.isToggledOn &&
+            widget.sessionId != null &&
+            widget.orgId != null)
+          MessageInputBar(
+            sessionId: widget.sessionId!,
+            orgId: widget.orgId,
+            onMessageSent: (message) {
+              // Optionally refresh messages or handle sent message
+            },
+          ),
       ],
     );
   }
 }
-
