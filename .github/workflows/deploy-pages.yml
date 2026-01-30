@@ -37,12 +37,30 @@ jobs:
           echo "--- pubspec environment (must be >=3.3.0 for Dart 3.3.4) ---"
           grep -A1 "^environment:" pubspec.yaml
 
-      # Ensure SDK constraint allows Dart 3.3.4 (Flutter 3.19.6) so pub get succeeds
+      # Ensure only environment.sdk is set for Dart 3.3.4 (do not touch dependencies' sdk: flutter)
       - name: Set pubspec SDK for CI
         run: |
-          # Match any indentation and any sdk value (^3.9.2, ">=3.9.0", etc.)
-          sed -i.bak 's/^[[:space:]]*sdk:[[:space:]]*.*/  sdk: ">=3.3.0 <4.0.0"/' pubspec.yaml
-          # Also fix pubspec.lock sdks section so it accepts Dart 3.3.4
+          python3 << 'PY'
+          with open("pubspec.yaml", "r") as f:
+            lines = f.readlines()
+          in_env = False
+          out = []
+          for line in lines:
+            if line.strip() == "environment:":
+              in_env = True
+              out.append(line)
+              continue
+            if in_env and line.strip().startswith("sdk:"):
+              out.append('  sdk: ">=3.3.0 <4.0.0"\n')
+              in_env = False
+              continue
+            if in_env and line and not line[0].isspace() and line.strip():
+              in_env = False
+            out.append(line)
+          with open("pubspec.yaml", "w") as f:
+            f.writelines(out)
+          PY
+          # Fix pubspec.lock sdks so it accepts Dart 3.3.4
           sed -i.bak 's/dart: ">=3\.9\.0/dart: ">=3.3.0/' pubspec.lock 2>/dev/null || true
           sed -i.bak 's/flutter: ">=3\.35\./flutter: ">=3.19./' pubspec.lock 2>/dev/null || true
           echo "--- pubspec after CI fix ---"
