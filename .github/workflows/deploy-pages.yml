@@ -68,8 +68,11 @@ jobs:
           echo "--- pubspec.lock sdks ---"
           grep -A2 "^sdks:" pubspec.lock 2>/dev/null || true
 
+      # Remove lock so pub get creates one for Dart 3.3.4 (avoids ^3.3.0 / ^3.9.0 mismatch)
       - name: Install dependencies
-        run: flutter pub get
+        run: |
+          rm -f pubspec.lock
+          flutter pub get
 
       - name: Build web
         run: |
